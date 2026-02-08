@@ -1,0 +1,363 @@
+from __future__ import annotations
+
+import argparse
+import json
+import shutil
+from pathlib import Path
+
+
+# ------------------------------------------------------------
+# HARD-CODED STRUCTURE (folders + notebooks)  — NO Part I/II
+# ------------------------------------------------------------
+STRUCTURE = [
+    {
+        "folder": "01_Linear_Algebra",
+        "title": "Chapter 1 — Linear Algebra",
+        "include_exercises": True,
+        "files": [
+            "01_Linear_Algebra.ipynb",
+            "01_01_Systems_of_Linear_Equations.ipynb",
+            "01_02_Matrices.ipynb",
+            "01_03_Solving_Systems_of_Linear_Equations.ipynb",
+            "01_04_Vector_Spaces.ipynb",
+            "01_05_Linear_Independence.ipynb",
+            "01_06_Basis_and_Rank.ipynb",
+            "01_07_Linear_Mappings.ipynb",
+            "01_08_Affine_Spaces.ipynb",
+            "01_09_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "02_Analytic_Geometry",
+        "title": "Chapter 2 — Analytic Geometry",
+        "include_exercises": True,
+        "files": [
+            "02_01_Norms.ipynb",
+            "02_02_Inner_Products.ipynb",
+            "02_03_Lengths_and_Distances.ipynb",
+            "02_04_Angles_and_Orthogonality.ipynb",
+            "02_05_Orthonormal_Basis.ipynb",
+            "02_06_Orthogonal_Complement.ipynb",
+            "02_07_Inner_Product_of_Functions.ipynb",
+            "02_08_Orthogonal_Projections.ipynb",
+            "02_09_Rotations.ipynb",
+            "02_10_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "03_Matrix_Decompositions",
+        "title": "Chapter 3 — Matrix Decompositions",
+        "include_exercises": True,
+        "files": [
+            "03_01_Determinant_and_Trace.ipynb",
+            "03_02_Eigenvalues_and_Eigenvectors.ipynb",
+            "03_03_Cholesky_Decomposition.ipynb",
+            "03_04_Eigendecomposition_and_Diagonalization.ipynb",
+            "03_05_Singular_Value_Decomposition.ipynb",
+            "03_06_Matrix_Approximation.ipynb",
+            "03_07_Matrix_Phylogeny.ipynb",
+            "03_08_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "04_Vector_Calculus",
+        "title": "Chapter 4 — Vector Calculus",
+        "include_exercises": True,
+        "files": [
+            "04_01_Differentiation_of_Univariate_Functions.ipynb",
+            "04_02_Partial_Differentiation_and_Gradients.ipynb",
+            "04_03_Gradients_of_Vector-Valued_Functions.ipynb",
+            "04_04_Gradients_of_Matrices.ipynb",
+            "04_05_Useful_Identities_for_Computing_Gradients.ipynb",
+            "04_06_Backpropagation_and_Automatic_Differentiation.ipynb",
+            "04_07_Higher-Order_Derivatives.ipynb",
+            "04_08_Linearization_and_Multivariate_Taylor_Series.ipynb",
+            "04_09_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "05_Probability_and_Distributions",
+        "title": "Chapter 5 — Probability and Distributions",
+        "include_exercises": True,
+        "files": [
+            "05_01_Construction_of_a_Probability_Space.ipynb",
+            "05_02_Discrete_and_Continuous_Probabilities.ipynb",
+            "05_03_Sum_Rule_Product_Rule_and_Bayes_Theorem.ipynb",
+            "05_04_Summary_Statistics_and_Independence.ipynb",
+            "05_05_Gaussian_Distribution.ipynb",
+            "05_06_Conjugacy_and_the_Exponential_Family.ipynb",
+            "05_07_Change_of_Variables_Inverse_Transform.ipynb",
+            "05_08_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "06_Continuous_Optimization",
+        "title": "Chapter 6 — Continuous Optimization",
+        "include_exercises": True,
+        "files": [
+            "06_01_Optimization_Using_Gradient_Descent.ipynb",
+            "06_02_Constrained_Optimization_and_Lagrange_Multipliers.ipynb",
+            "06_03_Convex_Optimization.ipynb",
+            "06_04_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "07_When_Models_Meet_Data",
+        "title": "Chapter 7 — When Models Meet Data",
+        "include_exercises": False,
+        "files": [
+            "07_01_Data_Models_and_Learning.ipynb",
+            "07_02_Empirical_Risk_Minimization.ipynb",
+            "07_03_Parameter_Estimation.ipynb",
+            "07_04_Probabilistic_Modeling_and_Inference.ipynb",
+            "07_05_Directed_Graphical_Models.ipynb",
+            "07_06_Model_Selection.ipynb",
+        ],
+    },
+    {
+        "folder": "08_Linear_Regression",
+        "title": "Chapter 8 — Linear Regression",
+        "include_exercises": False,
+        "files": [
+            "08_01_Problem_Formulation.ipynb",
+            "08_02_Parameter_Estimation.ipynb",
+            "08_03_Bayesian_Linear_Regression.ipynb",
+            "08_04_Maximum_Likelihood_as_Orthogonal_Projection.ipynb",
+            "08_05_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "09_PCA",
+        "title": "Chapter 9 — Dimensionality Reduction with PCA",
+        "include_exercises": False,
+        "files": [
+            "09_01_Problem_Setting.ipynb",
+            "09_02_Maximum_Variance_Perspective.ipynb",
+            "09_03_Projection_Perspective.ipynb",
+            "09_04_Eigenvector_Computation_and_Low-Rank_Approximations.ipynb",
+            "09_05_PCA_in_High_Dimensions.ipynb",
+            "09_06_Key_Steps_of_PCA_in_Practice.ipynb",
+            "09_07_Latent_Variable_Perspective.ipynb",
+            "09_08_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "10_GMM",
+        "title": "Chapter 10 — Density Estimation with Gaussian Mixture Models",
+        "include_exercises": False,
+        "files": [
+            "10_01_Gaussian_Mixture_Model.ipynb",
+            "10_02_Parameter_Learning_via_Maximum_Likelihood.ipynb",
+            "10_03_EM_Algorithm.ipynb",
+            "10_04_Latent-Variable_Perspective.ipynb",
+            "10_05_Further_Reading.ipynb",
+        ],
+    },
+    {
+        "folder": "11_SVM",
+        "title": "Chapter 11 — Classification with Support Vector Machines",
+        "include_exercises": False,
+        "files": [
+            "11_01_Separating_Hyperplanes.ipynb",
+            "11_02_Primal_Support_Vector_Machine.ipynb",
+            "11_03_Dual_Support_Vector_Machine.ipynb",
+            "11_04_Kernels.ipynb",
+            "11_05_Numerical_Solution.ipynb",
+        ],
+    },
+]
+
+
+# ------------------------------------------------------------
+# Notebook template
+# ------------------------------------------------------------
+def title_from_filename(stem: str) -> str:
+    if stem.lower() == "exercises":
+        return "Exercises"
+    parts = stem.split("_")
+    # "01_01_..." -> "01.01 ..."
+    if len(parts) >= 3 and parts[0].isdigit() and parts[1].isdigit():
+        prefix = f"{parts[0]}.{parts[1]}"
+        rest = "_".join(parts[2:]).replace("_", " ")
+        return f"{prefix} {rest}"
+    # "01_Linear_Algebra" -> "01 Linear Algebra"
+    if len(parts) >= 2 and parts[0].isdigit():
+        rest = "_".join(parts[1:]).replace("_", " ")
+        return f"{parts[0]} {rest}"
+    return stem.replace("_", " ")
+
+
+def notebook_json(title: str) -> dict:
+    return {
+        "cells": [
+            {"cell_type": "markdown", "metadata": {}, "source": [f"# {title}\n"]},
+            {
+                "cell_type": "markdown",
+                "metadata": {},
+                "source": [
+                    "## Notes\n",
+                    "- Add theory, derivations, examples, and solved exercises here.\n",
+                    "- Add references at the end.\n",
+                ],
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "# Scratch cell\n",
+                    "import numpy as np\n",
+                ],
+            },
+        ],
+        "metadata": {
+            "kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
+            "language_info": {"name": "python", "version": "3.x"},
+        },
+        "nbformat": 4,
+        "nbformat_minor": 5,
+    }
+
+
+def create_notebook(path: Path, force: bool) -> str:
+    """
+    Returns: created | skipped | overwritten
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists() and not force:
+        return "skipped"
+
+    title = title_from_filename(path.stem)
+    path.write_text(json.dumps(notebook_json(title), indent=2), encoding="utf-8")
+    return "overwritten" if path.exists() and force else "created"
+
+
+# ------------------------------------------------------------
+# README generation
+# ------------------------------------------------------------
+def make_readme(root: Path) -> str:
+    lines: list[str] = []
+    lines.append("# Mathematics for Machine Learning\n")
+    lines.append("\n")
+    lines.append("## Table of Contents (Linked)\n")
+    lines.append("\n")
+
+    for chapter in STRUCTURE:
+        folder = chapter["folder"]
+        title = chapter["title"]
+
+        folder_link = f"[`{folder}/`]({folder}/)"
+        lines.append(f"### {title}\n")
+        lines.append(f"**Folder:** {folder_link}\n")
+        lines.append("\n")
+
+        # Add chapter overview notebook link if it exists in chapter file list
+        # Only Chapter 1 has a chapter-level notebook in this plan
+        chapter_nb = None
+        for f in chapter["files"]:
+            if f.endswith(".ipynb") and f.startswith(folder.split('_')[0] + "_") and f.count("_") == 2:
+                # e.g. 01_Linear_Algebra.ipynb
+                chapter_nb = f
+                break
+
+        if chapter_nb:
+            lines.append(f"**Chapter Notebook:** [`{chapter_nb}`]({folder}/{chapter_nb})\n")
+
+        if chapter.get("include_exercises", False):
+            lines.append(f"**Exercises:** [`Exercises.ipynb`]({folder}/Exercises.ipynb)\n")
+
+        lines.append("\n")
+        lines.append("| Section | Notebook |\n")
+        lines.append("|---|---|\n")
+
+        for f in chapter["files"]:
+            if f == chapter_nb:
+                continue  # don't list the chapter-level notebook inside the section table
+            if f.lower() == "exercises.ipynb":
+                continue
+
+            # Create section label from filename: 01_01_... -> 01.01
+            stem = Path(f).stem
+            parts = stem.split("_")
+            if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+                section = f"{parts[0]}.{parts[1]}"
+            else:
+                section = stem.replace("_", " ")
+
+            lines.append(f"| {section} | [`{f}`]({folder}/{f}) |\n")
+
+        lines.append("\n---\n\n")
+
+    return "".join(lines)
+
+
+# ------------------------------------------------------------
+# MAIN
+# ------------------------------------------------------------
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Recreate MML folder+notebook structure (no notebooks/ folder, no Part I/II) and generate readme.md"
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Delete existing chapter folders (01_..., 02_..., etc.) before recreating.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite notebooks if they already exist.",
+    )
+    args = parser.parse_args()
+
+    root = Path(".").resolve()
+
+    # Clean (delete) existing chapter folders
+    if args.clean:
+        for ch in STRUCTURE:
+            folder_path = root / ch["folder"]
+            if folder_path.exists() and folder_path.is_dir():
+                shutil.rmtree(folder_path)
+        # Also remove old notebooks folder if exists (your previous structure)
+        old = root / "notebooks"
+        if old.exists() and old.is_dir():
+            shutil.rmtree(old)
+
+    created = skipped = overwritten = 0
+
+    # Create folders + notebooks
+    for chapter in STRUCTURE:
+        folder_path = root / chapter["folder"]
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Exercises
+        if chapter.get("include_exercises", False):
+            ex_path = folder_path / "Exercises.ipynb"
+            status = create_notebook(ex_path, force=args.force)
+            created += (status == "created")
+            skipped += (status == "skipped")
+            overwritten += (status == "overwritten")
+
+        for f in chapter["files"]:
+            nb_path = folder_path / f
+            status = create_notebook(nb_path, force=args.force)
+            created += (status == "created")
+            skipped += (status == "skipped")
+            overwritten += (status == "overwritten")
+
+    # Write README (readme.md)
+    readme_path = root / "readme.md"
+    readme_path.write_text(make_readme(root), encoding="utf-8")
+
+    print("\n✅ Done.")
+    print(f"Root: {root}")
+    print(f"Created notebooks: {created}")
+    print(f"Skipped (already existed): {skipped}")
+    print(f"Overwritten: {overwritten}")
+    print("Generated: readme.md")
+
+
+if __name__ == "__main__":
+    main()
